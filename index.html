@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. Plant - Plant Disease Detection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1525923838299-23124b654655?q=80&w=2574&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        
+        .main-container,
+        .report-container {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .loader {
+            border: 5px solid #e2e8f0;
+            border-top: 5px solid #38a169;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .dragover {
+            border-color: #38a169;
+            background-color: rgba(237, 247, 237, 0.7);
+        }
+        
+        .prose h3 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .prose h4 {
+            margin-top: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        @media print {
+            body {
+                background-image: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .report-page {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+            .report-container {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 min-h-screen flex flex-col justify-center no-print">
+        <header class="text-center mb-8">
+            <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold text-green-700" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Dr. Plant</h1>
+            <p class="text-lg sm:text-xl text-white mt-2" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">Your personal plant health expert.</p>
+        </header>
+
+        <main id="main-page" class="main-container rounded-2xl shadow-2xl p-6 md:p-8 max-w-4xl mx-auto w-full">
+            <div id="message-box" class="hidden p-4 mb-4 text-sm text-red-800 bg-red-100 rounded-lg" role="alert">
+                <span class="font-medium">Error:</span> <span id="message-text"></span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div class="flex flex-col items-center justify-center">
+                    <div id="image-upload-container" class="w-full h-64 border-2 border-dashed border-gray-400 rounded-xl flex flex-col justify-center items-center cursor-pointer hover:bg-gray-50/50 transition-all">
+                        <input type="file" id="image-upload" class="hidden" accept="image/*">
+                        <svg class="w-16 h-16 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3 3m3-3l3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
+                        <p class="mt-2 font-semibold text-gray-600">Click or Drag & Drop to Upload</p>
+                        <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                    </div>
+                    <div id="image-preview-container" class="w-full h-64 rounded-xl overflow-hidden hidden mt-4 shadow-lg"><img id="image-preview" src="#" alt="Image Preview" class="w-full h-full object-cover"></div>
+                    <div class="w-full flex space-x-4 mt-4"><button id="analyze-button" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transform hover:scale-105 transition-all" disabled>Diagnose Plant</button></div>
+                </div>
+                <div id="results-container" class="flex flex-col justify-center h-full bg-gray-50/70 rounded-xl p-6 shadow-inner min-h-[20rem]">
+                    <div id="loader" class="loader mx-auto hidden"></div>
+                    <div id="placeholder-text" class="text-center text-gray-500">
+                        <svg class="w-20 h-20 mx-auto text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" /></svg>
+                        <p class="mt-4">Your plant's diagnosis will appear here once you upload an image.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="report-page" class="hidden">
+        <div class="report-container rounded-2xl shadow-2xl p-6 md:p-8 max-w-4xl mx-auto w-full mt-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-green-700">Dr. Plant Diagnosis Report</h1>
+                <p class="text-gray-500">Generated on: <span id="report-date"></span></p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h2 class="text-xl font-bold mb-2">Subject</h2>
+                    <img id="report-image" src="#" alt="Analyzed Plant" class="rounded-xl shadow-lg w-full">
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold mb-2">Analysis</h2>
+                    <div id="report-text" class="prose prose-sm max-w-none bg-gray-50/70 rounded-xl p-4"></div>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-4xl mx-auto w-full text-center mt-6 no-print">
+            <button id="share-or-copy-button" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-blue-700 transform hover:scale-105 transition-all"></button>
+            <button id="print-report-button" class="ml-4 bg-teal-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-teal-700 transform hover:scale-105 transition-all">Save as PDF</button>
+            <button id="new-diagnosis-button" class="ml-4 bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg shadow-lg hover:bg-gray-600 transform hover:scale-105 transition-all">Diagnose Another Plant</button>
+        </div>
+        <div id="copy-feedback" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg hidden transition-opacity duration-300">Copied to clipboard!</div>
+    </div>
+    <div id="plain-text-report" class="hidden"></div>
+
+
+    <script>
+        const mainPage = document.getElementById('main-page');
+        const reportPage = document.getElementById('report-page');
+        const imageUploadContainer = document.getElementById('image-upload-container');
+        const imageUpload = document.getElementById('image-upload');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const analyzeButton = document.getElementById('analyze-button');
+        const loader = document.getElementById('loader');
+        const placeholderText = document.getElementById('placeholder-text');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+        const reportImage = document.getElementById('report-image');
+        const reportText = document.getElementById('report-text');
+        const reportDate = document.getElementById('report-date');
+        const shareOrCopyButton = document.getElementById('share-or-copy-button');
+        const printReportButton = document.getElementById('print-report-button');
+        const newDiagnosisButton = document.getElementById('new-diagnosis-button');
+        const copyFeedback = document.getElementById('copy-feedback');
+        const plainTextReportContainer = document.getElementById('plain-text-report');
+
+        let base64ImageData = "";
+        let imageMimeType = "";
+
+        function showMessage(msg) {
+            messageText.textContent = msg;
+            messageBox.classList.remove('hidden');
+        }
+
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+        function resetUI() {
+            hideMessage();
+            imageUpload.value = '';
+            base64ImageData = "";
+            imageMimeType = "";
+            imagePreview.src = "#";
+            imagePreviewContainer.classList.add('hidden');
+            imageUploadContainer.classList.remove('hidden');
+            analyzeButton.disabled = true;
+            mainPage.classList.remove('hidden');
+            reportPage.classList.add('hidden');
+            document.querySelector('.no-print').style.display = 'flex';
+        }
+
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                showMessage("Please upload a valid image file (PNG, JPG, etc.).");
+                return;
+            }
+            hideMessage();
+            imageMimeType = file.type;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                base64ImageData = e.target.result;
+                imageUploadContainer.classList.add('hidden');
+                imagePreviewContainer.classList.remove('hidden');
+                analyzeButton.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showReport(imageDataUrl, analysisHtml) {
+            reportImage.src = imageDataUrl;
+            reportText.innerHTML = analysisHtml;
+            reportDate.textContent = new Date().toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = analysisHtml;
+            plainTextReportContainer.textContent = tempDiv.innerText;
+
+            if (navigator.share) {
+                shareOrCopyButton.textContent = 'Share Report';
+            } else {
+                shareOrCopyButton.textContent = 'Copy Report';
+            }
+
+            mainPage.classList.add('hidden');
+            document.querySelector('.no-print').style.display = 'none';
+            reportPage.classList.remove('hidden');
+        }
+
+        imageUploadContainer.addEventListener('click', () => imageUpload.click());
+        imageUpload.addEventListener('change', (event) => handleFile(event.target.files[0]));
+
+        ['dragover', 'dragenter'].forEach(eventName => {
+            imageUploadContainer.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                imageUploadContainer.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            imageUploadContainer.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                imageUploadContainer.classList.remove('dragover');
+            });
+        });
+
+        imageUploadContainer.addEventListener('drop', (event) => {
+            const file = event.dataTransfer.files[0];
+            handleFile(file);
+        });
+
+        newDiagnosisButton.addEventListener('click', resetUI);
+        printReportButton.addEventListener('click', () => window.print());
+
+        shareOrCopyButton.addEventListener('click', async() => {
+            const reportTitle = 'Dr. Plant Diagnosis Report';
+            const reportContent = `Generated on: ${reportDate.textContent}\n\n${plainTextReportContainer.textContent}`;
+            const copyToClipboard = () => {
+                const textArea = document.createElement("textarea");
+                textArea.value = `${reportTitle}\n${reportContent}`;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    copyFeedback.classList.remove('hidden');
+                    setTimeout(() => {
+                        copyFeedback.classList.add('hidden');
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                }
+                document.body.removeChild(textArea);
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: reportTitle,
+                        text: reportContent
+                    });
+                } catch (err) {
+                    console.error('Web Share API failed, falling back to copy:', err);
+                    copyToClipboard();
+                }
+            } else {
+                copyToClipboard();
+            }
+        });
+
+        analyzeButton.addEventListener('click', async() => {
+            if (!base64ImageData) {
+                showMessage("Please upload an image first.");
+                return;
+            }
+            hideMessage();
+            loader.classList.remove('hidden');
+            placeholderText.classList.add('hidden');
+            analyzeButton.disabled = true;
+            analyzeButton.textContent = 'Diagnosing...';
+
+            try {
+                // The API key is GONE from here. We now call our own backend.
+                const response = await fetch('/api/diagnose', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: base64ImageData.split(',')[1],
+                        mimeType: imageMimeType
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.error || 'The server responded with an error.');
+                }
+
+                // Our backend will send back the HTML response directly as text.
+                const analysisResult = await response.text();
+
+                showReport(base64ImageData, analysisResult);
+
+            } catch (error) {
+                console.error("Error during analysis:", error);
+                showMessage(`An error occurred: ${error.message}`);
+            } finally {
+                loader.classList.add('hidden');
+                placeholderText.classList.remove('hidden');
+                analyzeButton.disabled = false;
+                analyzeButton.textContent = 'Diagnose Plant';
+            }
+        });
+
+        resetUI();
+    </script>
+</body>
+
+</html>
