@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     };
 
     try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const geminiResponse = await fetch(geminiUrl, {
             method: 'POST',
@@ -75,4 +75,5 @@ export default async function handler(req, res) {
         console.error('Internal server error:', error);
         res.status(500).json({ error: error.message });
     }
+
 }
